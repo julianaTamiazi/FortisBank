@@ -1,0 +1,66 @@
+connect sys/sys as sysdba;
+drop user juliana cascade;
+create user juliana identified by tamiazi;
+grant connect, resource to juliana;
+connect juliana/tamiazi;
+
+CREATE TABLE customer
+(c_id NUMBER(9), 
+c_last VARCHAR2(30),
+c_first VARCHAR2(30),
+c_password VARCHAR2(30),
+CONSTRAINT customer_c_id_pk PRIMARY KEY (c_id));
+
+CREATE TABLE account
+(ac_number NUMBER(9), 
+ac_type VARCHAR2(30) ,
+ac_pin NUMBER(4),
+ac_opendate DATE,balance NUMBER, ac_id NUMBER(9) not null, 
+CONSTRAINT account_ac_number_pk PRIMARY KEY (ac_number),
+CONSTRAINT account_ac_id_fk FOREIGN KEY (ac_id) REFERENCES customer(c_id));
+
+CREATE TABLE checking
+(ch_number NUMBER(9), ac_number NUMBER(9) not null,
+ch_balance NUMBER, ch_fee number,
+CONSTRAINT checking_ch_number_pk PRIMARY KEY (ch_number),
+CONSTRAINT checking_ac_number_fk FOREIGN KEY (ac_number) REFERENCES account(ac_number));
+
+CREATE TABLE saving
+(s_number NUMBER(9),ac_number NUMBER(9) not null,
+s_balance NUMBER, s_fee number,
+CONSTRAINT saving_s_number_pk PRIMARY KEY (s_number),
+CONSTRAINT saving_ac_number_fk FOREIGN KEY (ac_number) REFERENCES account(ac_number));
+
+CREATE TABLE credit
+(cr_number NUMBER(9),ac_number NUMBER(9) not null,
+cr_balance NUMBER, cr_limite number,
+CONSTRAINT credit_cr_number_pk PRIMARY KEY (cr_number),
+CONSTRAINT credit_ac_number_fk FOREIGN KEY (ac_number) REFERENCES account(ac_number));
+
+CREATE TABLE transation
+(t_number NUMBER,sa_number number not null, t_type VARCHAR2(30) ,
+t_date date,amount NUMBER, CONSTRAINT account_t_number_pk PRIMARY KEY (t_number));
+
+insert into customer values (1,'Juliana', 'Tamiazi', 111);
+insert into customer values (2,'Joao', 'Riff', 222);
+
+insert into account values (1000,'Checking',111,sysdate,0.00,1);
+insert into account values (1001,'Checking',222,sysdate,0.00,2);
+
+insert into checking values (100,1000,0.00,0.00);
+insert into saving values (200,1000,0.00,0.00);
+insert into credit values (300,1000,0.00,0.00);
+
+insert into checking values (101,1001,0.00,0.00);
+
+insert into transation values (1, 100,'Deposit',sysdate,100.00);
+insert into transation values (2, 100,'Deposit',sysdate,100.00);
+insert into transation values (3, 101,'Deposit',sysdate,100.00);
+
+commit;
+
+ update checking set ch_balance = (select sum(amount) from transation t, checking ch  where t.sa_number = ch.ch_number and t_type = 'Deposit' and sa_number=100 - 
+select sum(amount) from transation t, checking ch  where t.sa_number = ch.ch_number and t_type = 'Withdraw' and sa_number=100);
+
+
+
